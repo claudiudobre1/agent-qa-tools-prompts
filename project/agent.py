@@ -42,17 +42,78 @@ class QAAgent:
             "arguments": {"text": question},
         }
 
-    def answer(self, question: str) -> str:
-        action = self.choose_tool(question)
-        tool_name = action["tool_name"]
-        arguments = action["arguments"]
+    def answer(self, question: str, debug: bool = False) -> str:
+        max_iterations = 3
+        trace = []
 
-        observation = self.tools.call(tool_name, arguments)
-
-        return (
-            f"Tool used: {tool_name}\n"
-            f"Result: {observation}"
+        planner_prompt = self.prompts.render(
+            "planner",
+            question=question,
+            tools=self.tools.catalog_as_text(),
         )
+
+        trace.append("Think: Read the user question and inspect available tools.")
+        trace.append("Planner prompt rendered successfully.")
+        trace.append(planner_prompt)
+
+        for iteration in range(1, max_iterations + 1):
+            action = self.choose_tool(question)
+            tool_name = action["tool_name"]
+            arguments = action["arguments"]
+
+            trace.append(
+                f"Act {iteration}: Call tool '{tool_name}' with arguments {arguments}."
+            )
+
+            observation = self.tools.call(tool_name, arguments)
+
+            trace.append(f"Observe {iteration}: {observation}")
+
+            analyst_prompt = self.prompts.render(
+                "analyst",
+                question=question,
+                tool_name=tool_name,
+                observation=observation,
+            )
+
+            trace.append("Analyst prompt rendered successfully.")
+            trace.append(analyst_prompt)
+
+            tool_failed = observation.startswith("Error") or observation.startswith(
+                "Tool error"
+            )
+
+            if not tool_failed:
+                final_answer = (
+                    f"Tool used: {tool_name}\n"
+                    f"Result: {observation}"
+                )
+
+                if debug:
+                    return (
+                        "REACT TRACE:\n"
+                        + "\n\n".join(trace)
+                        + "\n\nFINAL ANSWER:\n"
+                        + final_answer
+                    )
+
+                return final_answer
+
+            trace.append(
+                f"Think {iteration}: Tool failed, retrying if another iteration is available."
+            )
+
+        failure_message = "I could not produce an answer within the iteration limit."
+
+        if debug:
+            return (
+                "REACT TRACE:\n"
+                + "\n\n".join(trace)
+                + "\n\nFINAL ANSWER:\n"
+                + failure_message
+            )
+
+        return failure_message
 
 
 if __name__ == "__main__":
