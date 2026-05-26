@@ -1,4 +1,4 @@
-import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -15,17 +15,27 @@ class QAAgent:
     def choose_tool(self, question: str) -> dict[str, Any]:
         lowered = question.lower()
 
-        if any(word in lowered for word in ["calculate", "what is", "*", "+", "-", "/"]):
-            return {
-                "tool_name": "calculator",
-                "arguments": {"expression": question},
-            }
-
-        if any(word in lowered for word in ["date", "time", "today", "now"]):
+        time_keywords = ["time", "date", "today"]
+        if any(keyword in lowered for keyword in time_keywords):
             return {
                 "tool_name": "datetime",
                 "arguments": {"timezone": None},
             }
+
+        math_pattern = r"[\d\s+\-*/().%]+"
+        possible_expressions = re.findall(math_pattern, question)
+
+        for expression in possible_expressions:
+            expression = expression.strip()
+
+            has_digit = any(char.isdigit() for char in expression)
+            has_operator = any(char in expression for char in ["+", "-", "*", "/", "%"])
+
+            if has_digit and has_operator:
+                return {
+                    "tool_name": "calculator",
+                    "arguments": {"expression": expression},
+                }
 
         return {
             "tool_name": "text_stats",
@@ -33,50 +43,15 @@ class QAAgent:
         }
 
     def answer(self, question: str) -> str:
-        notes = []
-
-        planner_prompt = self.prompts.render(
-            "planner",
-            question=question,
-            tools=self.tools.catalog_as_text(),
-        )
-
-        notes.append("Planner prompt rendered.")
-        notes.append(planner_prompt)
-
         action = self.choose_tool(question)
         tool_name = action["tool_name"]
         arguments = action["arguments"]
 
         observation = self.tools.call(tool_name, arguments)
 
-        analyst_prompt = self.prompts.render(
-            "analyst",
-            question=question,
-            tool_name=tool_name,
-            observation=observation,
-        )
-
-        notes.append("Tool selected: " + tool_name)
-        notes.append("Tool arguments: " + json.dumps(arguments))
-        notes.append("Observation: " + observation)
-        notes.append(analyst_prompt)
-
-        final_prompt = self.prompts.render(
-            "summary",
-            question=question,
-            notes="\n\n".join(notes),
-        )
-
         return (
-            "QUESTION:\n"
-            f"{question}\n\n"
-            "ACTION:\n"
-            f"Used tool: {tool_name}\n\n"
-            "OBSERVATION:\n"
-            f"{observation}\n\n"
-            "FINAL:\n"
-            f"{final_prompt}"
+            f"Tool used: {tool_name}\n"
+            f"Result: {observation}"
         )
 
 
