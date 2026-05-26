@@ -29,3 +29,21 @@ def test_time_question_uses_datetime():
     action = agent.choose_tool("What is the time?")
 
     assert action["tool_name"] == "datetime"
+
+
+def test_answer_returns_calculator_result():
+    agent = QAAgent()
+    answer = agent.answer("25 * 17")
+
+    assert "Tool used: calculator" in answer
+    assert "Result: 425" in answer
+
+
+def test_debug_answer_contains_react_trace():
+    agent = QAAgent()
+    answer = agent.answer("25 * 17", debug=True)
+
+    assert "REACT TRACE:" in answer
+    assert "Act 1: Call tool 'calculator'" in answer
+    assert "Observe 1: 425" in answer
+    assert "FINAL ANSWER:" in answer
