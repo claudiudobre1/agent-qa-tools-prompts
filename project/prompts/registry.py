@@ -1,43 +1,35 @@
-from typing import Callable, Any
+from pathlib import Path
+from typing import Any
+
+import yaml
+from jinja2 import Template
 
 
-TOOL_REGISTRY: dict[str, dict[str, Any]] = {}
+class PromptRegistry:
+    def __init__(self, prompts_dir: str | Path):
+        self.prompts_dir = Path(prompts_dir)
+        self.prompts: dict[str, dict[str, Any]] = {}
+        self.load_prompts()
 
+    def load_prompts(self) -> None:
+        for path in self.prompts_dir.glob("*.yaml"):
+            with open(path, "r", encoding="utf-8") as file:
+                data = yaml.safe_load(file)
 
-def register_tool(
-    name: str,
-    description: str,
-    params_model: type
-):
-    """
-    Decorator used to register a tool with metadata.
-    """
+            if not data:
+                continue
 
-    def decorator(func: Callable):
-        TOOL_REGISTRY[name] = {
-            "name": name,
-            "description": description,
-            "params_model": params_model,
-            "function": func,
-        }
-        return func
+            name = data["name"]
+            self.prompts[name] = data
 
-    return decorator
+    def render(self, name: str, **variables: Any) -> str:
+        if name not in self.prompts:
+            raise ValueError(f"Prompt '{name}' not found. Available: {self.list_prompts()}")
 
+        template_text = self.prompts[name]["template"]
+        template = Template(template_text)
 
-def get_tool(name: str) -> dict[str, Any]:
-    if name not in TOOL_REGISTRY:
-        raise ValueError(f"Tool '{name}' not found.")
+        return template.render(**variables)
 
-    return TOOL_REGISTRY[name]
-
-
-def list_tools() -> list[dict[str, Any]]:
-    return [
-        {
-            "name": tool["name"],
-            "description": tool["description"],
-            "parameters": tool["params_model"].model_json_schema(),
-        }
-        for tool in TOOL_REGISTRY.values()
-    ]
+    def list_prompts(self) -> list[str]:
+        return list(self.prompts.keys())

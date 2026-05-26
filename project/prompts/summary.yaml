@@ -1,0 +1,11 @@
+name: summary
+template: |
+  You are writing the final answer for the user.
+
+  User question:
+  {{ question }}
+
+  Reasoning notes:
+  {{ notes }}
+
+  Final answer:

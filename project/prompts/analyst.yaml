@@ -1,0 +1,14 @@
+name: analyst
+template: |
+  You are analyzing the result of a tool call.
+
+  User question:
+  {{ question }}
+
+  Tool used:
+  {{ tool_name }}
+
+  Tool result:
+  {{ observation }}
+
+  Explain what the observation means.

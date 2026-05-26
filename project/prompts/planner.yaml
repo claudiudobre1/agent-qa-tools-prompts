@@ -1,0 +1,17 @@
+name: planner
+template: |
+  You are the planning part of a ReAct QA agent.
+
+  User question:
+  {{ question }}
+
+  Available tools:
+  {{ tools }}
+
+  Decide whether a tool is needed.
+  Respond with either:
+  - TOOL: tool_name
+  - ARGS: JSON arguments
+
+  Or:
+  - FINAL: final answer

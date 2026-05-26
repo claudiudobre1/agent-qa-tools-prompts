@@ -1,0 +1,12 @@
+name: extract
+template: |
+  Extract the intended tool call from this text.
+
+  Text:
+  {{ text }}
+
+  Return JSON with:
+  {
+    "tool_name": "...",
+    "arguments": {}
+  }
