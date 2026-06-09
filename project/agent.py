@@ -15,6 +15,29 @@ class QAAgent:
     def choose_tool(self, question: str) -> dict[str, Any]:
         lowered = question.lower()
 
+        document_keywords = [
+            "document",
+            "documents",
+            "file",
+            "files",
+            "contract",
+            "clause",
+            "search",
+            "find",
+            "according to",
+            "based on",
+            "what does",
+        ]
+
+        if any(keyword in lowered for keyword in document_keywords):
+            return {
+                "tool_name": "search_documents",
+                "arguments": {
+                    "query": question,
+                    "top_k": 3,
+                },
+            }
+
         time_keywords = ["time", "date", "today"]
         if any(keyword in lowered for keyword in time_keywords):
             return {
@@ -79,6 +102,16 @@ class QAAgent:
             trace.append("Analyst prompt rendered successfully.")
             trace.append(analyst_prompt)
 
+            if tool_name == "search_documents":
+                rag_prompt = self.prompts.render(
+                    "rag_answer",
+                    question=question,
+                    context=observation,
+                )
+
+                trace.append("RAG answer prompt rendered successfully.")
+                trace.append(rag_prompt)
+
             tool_failed = observation.startswith("Error") or observation.startswith(
                 "Tool error"
             )
@@ -119,5 +152,5 @@ class QAAgent:
 if __name__ == "__main__":
     agent = QAAgent()
 
-    question = "What in God's name do you want now meatbag?"
+    question = "What does the contract say about termination notice?"
     print(agent.answer(question))
