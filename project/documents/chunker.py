@@ -1,4 +1,11 @@
+import re
+
 from project.documents.models import Document, DocumentChunk, make_chunk_id
+
+
+def split_into_paragraphs(text: str) -> list[str]:
+    paragraphs = re.split(r"\n\s*\n", text.strip())
+    return [paragraph.strip() for paragraph in paragraphs if paragraph.strip()]
 
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
@@ -11,22 +18,29 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]
     if overlap >= chunk_size:
         raise ValueError("overlap must be smaller than chunk_size.")
 
-    text = text.strip()
+    paragraphs = split_into_paragraphs(text)
 
-    if not text:
+    if not paragraphs:
         return []
 
     chunks = []
-    start = 0
+    current_chunk = ""
 
-    while start < len(text):
-        end = start + chunk_size
-        chunk = text[start:end].strip()
+    for paragraph in paragraphs:
+        if not current_chunk:
+            current_chunk = paragraph
+            continue
 
-        if chunk:
-            chunks.append(chunk)
+        candidate = current_chunk + "\n\n" + paragraph
 
-        start = end - overlap
+        if len(candidate) <= chunk_size:
+            current_chunk = candidate
+        else:
+            chunks.append(current_chunk)
+            current_chunk = paragraph
+
+    if current_chunk:
+        chunks.append(current_chunk)
 
     return chunks
 
