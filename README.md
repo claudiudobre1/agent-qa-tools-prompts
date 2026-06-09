@@ -191,3 +191,72 @@ git add .
 git commit -m "Describe the change"
 git push
 ```
+
+## Tema 2: Document Analyst with RAG
+
+This project also includes a simple local RAG pipeline for document analysis.
+
+The current implementation supports:
+
+- loading `.txt` documents
+- splitting documents into chunks
+- saving documents and chunks in local JSON files
+- searching relevant chunks with a simple keyword-based retrieval service
+- exposing document search as an agent tool
+- ingesting documents directly from the CLI
+
+### RAG project structure
+
+```text
+project/documents/
+├── __init__.py
+├── chunker.py
+├── loaders.py
+├── models.py
+├── rag_service.py
+└── repository.py
+```
+
+### Ingest a document
+
+Start the CLI:
+
+```bash
+python -m project.cli
+```
+
+Then ingest a document:
+
+```text
+You: /ingest data/sample_docs/contract.txt
+
+Ingested document: contract.txt
+Document ID: contract
+Chunks created: 1
+```
+
+### Search inside loaded documents
+
+Ask a document-related question:
+
+```text
+You: What does the contract say about termination notice?
+
+Tool used: search_documents
+Result: Found 1 relevant chunk(s):
+
+[1] contract.txt | chunk 0
+This contract can be terminated with 30 days written notice.
+```
+
+### RAG notes
+
+This version uses a lightweight keyword-based search service for clarity and local execution.
+
+A future version can replace the keyword search with:
+
+- embeddings
+- vector search
+- PostgreSQL with pgvector
+- PDF and DOCX loaders
+- LLM-based answer generation from retrieved chunks
