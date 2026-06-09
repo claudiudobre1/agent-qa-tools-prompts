@@ -1,0 +1,10 @@
+[
+  {
+    "id": "contract",
+    "source_path": "data\\sample_docs\\contract.txt",
+    "filename": "contract.txt",
+    "extension": ".txt",
+    "text": "This contract can be terminated with 30 days written notice.\n\nThe client must pay all invoices within 15 days.\n\nConfidential information must not be shared with third parties.\n",
+    "created_at": "2026-06-09T14:58:31.126931"
+  }
+]

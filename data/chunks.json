@@ -1,0 +1,26 @@
+[
+  {
+    "id": "contract_chunk_0",
+    "document_id": "contract",
+    "chunk_index": 0,
+    "text": "This contract can be terminated with 30 days written notice.\n\nThe client must pa",
+    "source_path": "data\\sample_docs\\contract.txt",
+    "filename": "contract.txt"
+  },
+  {
+    "id": "contract_chunk_1",
+    "document_id": "contract",
+    "chunk_index": 1,
+    "text": "nt must pay all invoices within 15 days.\n\nConfidential information must not be s",
+    "source_path": "data\\sample_docs\\contract.txt",
+    "filename": "contract.txt"
+  },
+  {
+    "id": "contract_chunk_2",
+    "document_id": "contract",
+    "chunk_index": 2,
+    "text": "t not be shared with third parties.",
+    "source_path": "data\\sample_docs\\contract.txt",
+    "filename": "contract.txt"
+  }
+]
