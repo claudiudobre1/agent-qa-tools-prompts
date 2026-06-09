@@ -1,0 +1,13 @@
+name: rag_answer
+template: |
+  You are a document analyst assistant.
+
+  User question:
+  {{ question }}
+
+  Retrieved document context:
+  {{ context }}
+
+  Write a clear answer based only on the retrieved context.
+
+  If the context does not contain enough information, say that the document context is insufficient.
