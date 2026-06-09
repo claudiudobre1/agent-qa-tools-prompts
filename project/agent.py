@@ -102,6 +102,16 @@ class QAAgent:
             trace.append("Analyst prompt rendered successfully.")
             trace.append(analyst_prompt)
 
+            if tool_name == "search_documents":
+                rag_prompt = self.prompts.render(
+                    "rag_answer",
+                    question=question,
+                    context=observation,
+                )
+
+                trace.append("RAG answer prompt rendered successfully.")
+                trace.append(rag_prompt)
+
             tool_failed = observation.startswith("Error") or observation.startswith(
                 "Tool error"
             )
