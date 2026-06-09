@@ -1,4 +1,22 @@
 from project.agent import QAAgent
+from project.documents.chunker import chunk_document
+from project.documents.loaders import load_text_file
+from project.documents.repository import DocumentRepository
+
+
+def ingest_document(path: str) -> str:
+    document = load_text_file(path)
+    chunks = chunk_document(document)
+
+    repository = DocumentRepository()
+    repository.save_document(document)
+    repository.save_chunks(chunks)
+
+    return (
+        f"Ingested document: {document.filename}\n"
+        f"Document ID: {document.id}\n"
+        f"Chunks created: {len(chunks)}"
+    )
 
 
 def main() -> None:
@@ -7,6 +25,7 @@ def main() -> None:
     print("Agent QA Tools Prompts")
     print("Type 'exit' or 'quit' to stop.")
     print("Use '/debug your question' to see the ReAct trace.")
+    print("Use '/ingest path/to/file.txt' to load a document.")
     print()
 
     while True:
@@ -17,6 +36,19 @@ def main() -> None:
             break
 
         if not user_input:
+            continue
+
+        if user_input.startswith("/ingest "):
+            path = user_input.replace("/ingest ", "", 1).strip()
+
+            try:
+                result = ingest_document(path)
+            except Exception as error:
+                result = f"Ingest error: {error}"
+
+            print()
+            print(result)
+            print()
             continue
 
         debug = False
