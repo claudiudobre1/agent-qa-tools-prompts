@@ -12,13 +12,35 @@ def test_load_text_file():
 
 
 def test_chunk_text_creates_chunks():
+    text = (
+        "First paragraph used for testing.\n\n"
+        "Second paragraph used for testing.\n\n"
+        "Third paragraph used for testing."
+    )
+
     chunks = chunk_text(
-        "This is a simple document used for testing chunk creation.",
-        chunk_size=20,
+        text,
+        chunk_size=50,
         overlap=5,
     )
 
     assert len(chunks) > 1
+
+
+def test_chunk_text_keeps_paragraphs_intact():
+    text = (
+        "This contract can be terminated with 30 days written notice.\n\n"
+        "The client must pay all invoices within 15 days."
+    )
+
+    chunks = chunk_text(
+        text,
+        chunk_size=80,
+        overlap=10,
+    )
+
+    assert chunks[0] == "This contract can be terminated with 30 days written notice."
+    assert chunks[1] == "The client must pay all invoices within 15 days."
 
 
 def test_chunk_document_creates_document_chunks():
