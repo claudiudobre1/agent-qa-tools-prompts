@@ -1,3 +1,4 @@
+from project.tools import ToolWrapper
 from project.documents.chunker import chunk_document, chunk_text
 from project.documents.loaders import load_text_file
 from project.documents.repository import DocumentRepository
@@ -80,3 +81,29 @@ def test_rag_service_finds_relevant_chunks(tmp_path):
 
     assert len(results) > 0
     assert "terminated" in results[0].text
+
+
+def test_search_documents_tool_returns_relevant_chunks(tmp_path):
+    document = load_text_file("data/sample_docs/contract.txt")
+    chunks = chunk_document(document, chunk_size=80, overlap=10)
+
+    repository = DocumentRepository(data_dir=tmp_path)
+    repository.save_document(document)
+    repository.save_chunks(chunks)
+
+    # Patch the default repository data by using the real data folder
+    real_repository = DocumentRepository()
+    real_repository.save_document(document)
+    real_repository.save_chunks(chunks)
+
+    result = ToolWrapper.call(
+        "search_documents",
+        {
+            "query": "termination notice",
+            "top_k": 2,
+        },
+    )
+
+    assert "Found" in result
+    assert "contract.txt" in result
+    assert "terminated with 30 days written notice" in result
