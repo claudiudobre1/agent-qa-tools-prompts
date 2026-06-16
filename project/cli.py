@@ -2,6 +2,8 @@ from project.agent import QAAgent
 from project.documents.chunker import chunk_document
 from project.documents.loaders import load_text_file
 from project.documents.repository import DocumentRepository
+from project.graph.data_reader_graph import run_data_reader
+from project.graph.supervisor_graph import run_supervisor
 
 
 def ingest_document(path: str) -> str:
@@ -19,6 +21,23 @@ def ingest_document(path: str) -> str:
     )
 
 
+def run_data_reader_command(question: str) -> str:
+    result = run_data_reader(question)
+
+    return (
+        "Data Reader Graph Result\n"
+        f"Source selected: {result['source']}\n"
+        f"Retry count: {result['retry_count']}\n"
+        f"Error: {result['error']}\n\n"
+        f"Result:\n{result['result']}"
+    )
+
+def run_multi_agent_command(question: str) -> str:
+    result = run_supervisor(question)
+
+    return result["final_answer"] or "No final answer produced."
+
+
 def main() -> None:
     agent = QAAgent()
 
@@ -26,6 +45,8 @@ def main() -> None:
     print("Type 'exit' or 'quit' to stop.")
     print("Use '/debug your question' to see the ReAct trace.")
     print("Use '/ingest path/to/file.txt' to load a document.")
+    print("Use '/data your question' to run the LangGraph data reader.")
+    print("Use '/multi your question' to run the multi-agent supervisor.")
     print()
 
     while True:
@@ -51,6 +72,19 @@ def main() -> None:
             print()
             continue
 
+        if user_input.startswith("/data "):
+            question = user_input.replace("/data ", "", 1).strip()
+
+            try:
+                result = run_data_reader_command(question)
+            except Exception as error:
+                result = f"Data reader error: {error}"
+
+            print()
+            print(result)
+            print()
+            continue
+
         debug = False
         question = user_input
 
@@ -63,6 +97,19 @@ def main() -> None:
         print()
         print(answer)
         print()
+
+        if user_input.startswith("/multi "):
+            question = user_input.replace("/multi ", "", 1).strip()
+
+            try:
+                result = run_multi_agent_command(question)
+            except Exception as error:
+                result = f"Multi-agent error: {error}"
+
+        print()
+        print(result)
+        print()
+        continue
 
 
 if __name__ == "__main__":
