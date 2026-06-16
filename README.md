@@ -309,3 +309,148 @@ Possible future improvements:
 - add LLM-based answer generation from retrieved chunks
 - add metadata filtering
 - add structured document extraction
+
+## Tema 3: LangGraph Data Reader and Multi-Agent Orchestration
+
+Tema 3 extends the project with LangGraph-based workflows.
+
+This implementation has two parts:
+
+1. a Data Reader Agent
+2. a Multi-Agent Orchestration system
+
+### Part A: Data Reader Agent
+
+The Data Reader Agent uses a typed graph state and a LangGraph workflow to route a user query to the correct data source.
+
+Implemented graph state:
+
+```text
+query
+source
+retry_count
+result
+error
+```
+
+Implemented graph nodes:
+
+- `parse_query`
+- `decide_source`
+- `generate_query`
+- `execute_query`
+- `check_result`
+
+The graph supports conditional routing and retry/fallback behavior.
+
+Supported sources:
+
+- `rag` for document questions
+- `csv` for tabular data questions
+- `fallback` when no suitable source is selected
+
+### Run the Data Reader Agent
+
+Start the CLI:
+
+```bash
+python -m project.cli
+```
+
+Use the `/data` command:
+
+```text
+You: /data What does the contract say about termination notice?
+```
+
+Example result:
+
+```text
+Data Reader Graph Result
+Source selected: rag
+Retry count: 0
+Error: None
+
+Result:
+[1] contract.txt | chunk 0
+This contract can be terminated with 30 days written notice.
+```
+
+CSV example:
+
+```text
+You: /data show csv rows and columns
+
+Data Reader Graph Result
+Source selected: csv
+Retry count: 0
+Error: None
+
+Result:
+CSV loaded successfully.
+Rows: 3
+Columns: ['name', 'score']
+```
+
+### Part B: Multi-Agent Orchestration
+
+The second part implements a supervisor-style multi-agent graph.
+
+The supervisor decides which worker agents should answer the query.
+
+Implemented workers:
+
+- `rag_worker`
+- `csv_worker`
+- `fallback_worker`
+- `aggregate_results`
+
+The graph uses shared state to store:
+
+```text
+query
+selected_agents
+agent_results
+final_answer
+error
+```
+
+### Run the Multi-Agent Supervisor
+
+Use the `/multi` command:
+
+```text
+You: /multi What does the contract say about termination notice and show csv rows?
+```
+
+Example result:
+
+```text
+Multi-Agent Orchestration Result
+
+Agent: rag_worker
+[1] contract.txt | chunk 0
+This contract can be terminated with 30 days written notice.
+
+Agent: csv_worker
+CSV loaded successfully.
+Rows: 3
+Columns: ['name', 'score']
+```
+
+### Tema 3 tests
+
+The project includes tests for:
+
+- Data Reader routing
+- RAG source selection
+- CSV source selection
+- fallback behavior
+- supervisor routing
+- multi-worker orchestration
+
+Run all tests:
+
+```bash
+python -m pytest
+```
