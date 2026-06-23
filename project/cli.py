@@ -4,6 +4,7 @@ from project.documents.loaders import load_text_file
 from project.documents.repository import DocumentRepository
 from project.graph.data_reader_graph import run_data_reader
 from project.graph.supervisor_graph import run_supervisor
+from project.memory.store import ConversationMemory
 
 
 def ingest_document(path: str) -> str:
@@ -32,6 +33,7 @@ def run_data_reader_command(question: str) -> str:
         f"Result:\n{result['result']}"
     )
 
+
 def run_multi_agent_command(question: str) -> str:
     result = run_supervisor(question)
 
@@ -40,6 +42,7 @@ def run_multi_agent_command(question: str) -> str:
 
 def main() -> None:
     agent = QAAgent()
+    memory = ConversationMemory()
 
     print("Agent QA Tools Prompts")
     print("Type 'exit' or 'quit' to stop.")
@@ -47,6 +50,8 @@ def main() -> None:
     print("Use '/ingest path/to/file.txt' to load a document.")
     print("Use '/data your question' to run the LangGraph data reader.")
     print("Use '/multi your question' to run the multi-agent supervisor.")
+    print("Use '/memory' to show recent conversation memory.")
+    print("Use '/memory clear' to clear conversation memory.")
     print()
 
     while True:
@@ -56,7 +61,20 @@ def main() -> None:
             print("Agent: Goodbye, meatbag.")
             break
 
-        if not user_input:
+        if user_input == "":
+            continue
+
+        if user_input == "/memory":
+            print()
+            print(memory.as_text())
+            print()
+            continue
+
+        if user_input == "/memory clear":
+            memory.clear()
+            print()
+            print("Conversation memory cleared.")
+            print()
             continue
 
         if user_input.startswith("/ingest "):
@@ -80,6 +98,25 @@ def main() -> None:
             except Exception as error:
                 result = f"Data reader error: {error}"
 
+            memory.add_message("user", question)
+            memory.add_message("assistant", result)
+
+            print()
+            print(result)
+            print()
+            continue
+
+        if user_input.startswith("/multi "):
+            question = user_input.replace("/multi ", "", 1).strip()
+
+            try:
+                result = run_multi_agent_command(question)
+            except Exception as error:
+                result = f"Multi-agent error: {error}"
+
+            memory.add_message("user", question)
+            memory.add_message("assistant", result)
+
             print()
             print(result)
             print()
@@ -94,22 +131,12 @@ def main() -> None:
 
         answer = agent.answer(question, debug=debug)
 
+        memory.add_message("user", question)
+        memory.add_message("assistant", answer)
+
         print()
         print(answer)
         print()
-
-        if user_input.startswith("/multi "):
-            question = user_input.replace("/multi ", "", 1).strip()
-
-            try:
-                result = run_multi_agent_command(question)
-            except Exception as error:
-                result = f"Multi-agent error: {error}"
-
-        print()
-        print(result)
-        print()
-        continue
 
 
 if __name__ == "__main__":
