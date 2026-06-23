@@ -1,4 +1,5 @@
 from project.agent import QAAgent
+from project.cache.store import PromptCache
 from project.documents.chunker import chunk_document
 from project.documents.loaders import load_text_file
 from project.documents.repository import DocumentRepository
@@ -43,6 +44,7 @@ def run_multi_agent_command(question: str) -> str:
 def main() -> None:
     agent = QAAgent()
     memory = ConversationMemory()
+    cache = PromptCache()
 
     print("Agent QA Tools Prompts")
     print("Type 'exit' or 'quit' to stop.")
@@ -52,6 +54,8 @@ def main() -> None:
     print("Use '/multi your question' to run the multi-agent supervisor.")
     print("Use '/memory' to show recent conversation memory.")
     print("Use '/memory clear' to clear conversation memory.")
+    print("Use '/cache' to show prompt cache stats.")
+    print("Use '/cache clear' to clear prompt cache.")
     print()
 
     while True:
@@ -77,6 +81,19 @@ def main() -> None:
             print()
             continue
 
+        if user_input == "/cache":
+            print()
+            print(cache.stats())
+            print()
+            continue
+
+        if user_input == "/cache clear":
+            cache.clear()
+            print()
+            print("Prompt cache cleared.")
+            print()
+            continue
+
         if user_input.startswith("/ingest "):
             path = user_input.replace("/ingest ", "", 1).strip()
 
@@ -92,11 +109,19 @@ def main() -> None:
 
         if user_input.startswith("/data "):
             question = user_input.replace("/data ", "", 1).strip()
+            cache_key = f"data:{question}"
+            cached = cache.get(cache_key)
 
-            try:
-                result = run_data_reader_command(question)
-            except Exception as error:
-                result = f"Data reader error: {error}"
+            if cached:
+                result = "[CACHE HIT]\n" + cached.response
+            else:
+                try:
+                    result = run_data_reader_command(question)
+                except Exception as error:
+                    result = f"Data reader error: {error}"
+
+                cache.set(cache_key, result)
+                result = "[CACHE MISS]\n" + result
 
             memory.add_message("user", question)
             memory.add_message("assistant", result)
@@ -108,11 +133,19 @@ def main() -> None:
 
         if user_input.startswith("/multi "):
             question = user_input.replace("/multi ", "", 1).strip()
+            cache_key = f"multi:{question}"
+            cached = cache.get(cache_key)
 
-            try:
-                result = run_multi_agent_command(question)
-            except Exception as error:
-                result = f"Multi-agent error: {error}"
+            if cached:
+                result = "[CACHE HIT]\n" + cached.response
+            else:
+                try:
+                    result = run_multi_agent_command(question)
+                except Exception as error:
+                    result = f"Multi-agent error: {error}"
+
+                cache.set(cache_key, result)
+                result = "[CACHE MISS]\n" + result
 
             memory.add_message("user", question)
             memory.add_message("assistant", result)
@@ -129,7 +162,15 @@ def main() -> None:
             debug = True
             question = user_input.replace("/debug ", "", 1).strip()
 
-        answer = agent.answer(question, debug=debug)
+        cache_key = f"agent:{question}:debug={debug}"
+        cached = cache.get(cache_key)
+
+        if cached:
+            answer = "[CACHE HIT]\n" + cached.response
+        else:
+            answer = agent.answer(question, debug=debug)
+            cache.set(cache_key, answer)
+            answer = "[CACHE MISS]\n" + answer
 
         memory.add_message("user", question)
         memory.add_message("assistant", answer)
